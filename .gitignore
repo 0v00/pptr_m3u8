@@ -1,7 +1,9 @@
 node_modules
 .env
-dist
+dist/
 dist/**/*
+audio/
+chunklist.txt
 .DS_Store
 Thumbs.db
 **/.vscode/*
