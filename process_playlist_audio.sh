@@ -2,6 +2,10 @@
 
 echo "Running playlist.ts to download files..."
 tsc
+if [ $? -ne 0 ]; then
+    echo "TypeScript compilation failed"
+    exit 1
+fi
 node dist/playlist.js
 
 if [ ! -d "audio" ] || [ -z "$(ls -A audio)" ]; then
