@@ -10,6 +10,8 @@ const chunklistSet: Set<string> = new Set();
 async function downloadPlaylistAudio(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const sanitizedUrl = url.replace(/[^a-zA-Z0-9]/g, "_");
+        console.log('url unsanitized', url)
+        console.log('url sanitized', sanitizedUrl)
         fs.mkdir("audio", { recursive: true }, (error) => {
             if (error) {
                 console.log(`error in creating dir: ${error}`);
@@ -21,10 +23,10 @@ async function downloadPlaylistAudio(url: string): Promise<void> {
         const process = spawn("yt-dlp", ["-x", "-o", outputPath, url]);
 
         process.stdout.on("data", (data) => {
-            console.log(`stdout: ${data}`);
+            console.log(`[${sanitizedUrl}] stdout: ${data}`);
         });
         process.stderr.on("data", (data) => {
-            console.log(`stderr: ${data}`);
+            console.log(`[${sanitizedUrl}] stderr: ${data}`);
         });
 
         process.on("close", (code) => {
@@ -92,13 +94,18 @@ async function main(): Promise<void> {
         crlfDelay: Infinity,
     });
 
+    const urls: string[] = [];
     for await (const url of rl) {
-        await getM3U8Playlist(url.trim());
+        urls.push(url.trim());
+    }
+
+    const urlBatches: string[][] = chunkArray(urls, 2);
+    for (const batch of urlBatches) {
+        await processBatch(batch, getM3U8Playlist);
     }
 
     const chunklistUrls: string[] = Array.from(chunklistSet);
     const batches: string[][] = chunkArray(chunklistUrls, 2);
-
     for (const batch of batches) {
         await processBatch(batch, downloadPlaylistAudio);
     }
