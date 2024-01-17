@@ -1,7 +1,8 @@
 #!/bin/bash
 
 echo "Running playlist.ts to download files..."
-node playlist.ts
+tsc
+node dist/playlist.js
 
 if [ ! -d "audio" ] || [ -z "$(ls -A audio)" ]; then
    echo "No audio files found. Exiting script."
