@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "Running playlist.ts to download files..."
+npm install
 tsc
 if [ $? -ne 0 ]; then
     echo "TypeScript compilation failed"

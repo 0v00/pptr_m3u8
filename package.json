@@ -7,5 +7,6 @@
   },
   "dependencies": {
     "puppeteer": "^21.6.1"
-  }
+  },
+  "author": "0v00"
 }
