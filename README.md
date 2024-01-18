@@ -2,12 +2,15 @@ Not all companies provide complete transcribed text of their annual general meet
 
 Tested against the most commonly used webcast/streaming service providers used by larger companies in Australia.
 
+## prerequisites
+Install `yt-dlp`, `ffmpeg`, and [whisper.cpp](https://github.com/ggerganov/whisper.cpp).
+
 ## how to use
-Place the annual general meetings you want to download and transcribe in `urls.csv`. You will also need `yt-dlp` and `ffmpeg` installed.
+Place the annual general meetings you want to download and transcribe in `urls.csv`.
 
 1. `npm install`
 2. `npm start` to run the scraping/audio download process
-3. alternatively, run `./process_playlist_audio.sh` to scrape, download the audio, and transcribe with whisper.cpp (follow the [whisper.cpp](https://github.com/ggerganov/whisper.cpp) installation instructions on how to set this up)
+3. alternatively, run `./process_playlist_audio.sh` to scrape, download the audio, and transcribe with whisper.cpp.
 
 Playlist scraping and audio downloads can both be configured to run in batches of `N` size - currently we run batches of `2` for both, but this can be changed by updating the second param in `chunkArray`:
 ```ts
