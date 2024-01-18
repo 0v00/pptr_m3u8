@@ -25,6 +25,7 @@ Playlist scraping and audio downloads can both be configured to run in batches o
 
 Downloaded audio files will be output to an `audio` dir. Transcribed audio files will also be output to the same `audio` dir.
 
-## to do (maybe)
+## future
 - use whisper with mlx
 - llm to search/summarize whisper output?
+- performance bottlenecks: some of the AGMs can take awhile to download. whisper can also take time to transcribe.
