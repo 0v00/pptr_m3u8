@@ -3,7 +3,7 @@ Not all companies provide complete transcribed text of their annual general meet
 Tested against the most commonly used webcast/streaming service providers used by larger companies in Australia.
 
 ## how to use
-Place the annual general meetings you want to download and transcribe in `urls.csv`.
+Place the annual general meetings you want to download and transcribe in `urls.csv`. You will also need `yt-dlp` and `ffmpeg` installed.
 
 1. `npm install`
 2. `npm start` to run the scraping/audio download process
