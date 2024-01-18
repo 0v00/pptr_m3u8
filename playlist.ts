@@ -99,13 +99,13 @@ async function main(): Promise<void> {
         }
     }
 
-    const agmBatches = chunkArray(agms, 2);
+    const agmBatches: AGM[][] = chunkArray(agms, 2);
     for (const agmBatch of agmBatches) {
         await processBatch(agmBatch, getM3U8Playlist);
     }
 
     const chunklistAGMs: AGM[] = Array.from(chunklistSet);
-    const urlBatches = chunkArray(chunklistAGMs, 2);
+    const urlBatches: AGM[][] = chunkArray(chunklistAGMs, 2);
     for (const urlBatch of urlBatches) {
         await processBatch(urlBatch, downloadPlaylistAudio);
     }
