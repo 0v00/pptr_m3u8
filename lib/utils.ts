@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { AGM } from '../types';
 
 export function getChunklistUrlSubstring(url: string): string {
     const pattern: RegExp = /^(.*chunklist\.m3u8)/;
@@ -20,14 +21,14 @@ export function chunkArray<T>(array: T[], chunkSize: number): T[][] {
     return chunks;
 };
 
-export async function processBatch(batch: string[], action: (url: string) => Promise<void>): Promise<void> {
-    const promises: Promise<void>[] = batch.map((url) => action(url));
+export async function processBatch(batch: AGM[], action: (agm: AGM) => Promise<void>): Promise<void> {
+    const promises: Promise<void>[] = batch.map((agm) => action(agm));
     const results: PromiseSettledResult<void>[] = await Promise.allSettled(promises);
     results.forEach((result, index) => {
         if (result.status === "fulfilled") {
-            console.log(`${batch[index]} completed successfully`);
+            console.log(`${batch[index].name} ${batch[index].year} completed successfully`);
         } else {
-            console.log(`${batch[index]} failed: ${result.reason}`);
+            console.log(`${batch[index].name} ${batch[index].year} failed: ${result.reason}`);
         }
     })
 };

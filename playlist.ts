@@ -3,15 +3,13 @@ import readline from 'node:readline';
 import { spawn } from 'child_process';
 import puppeteer, { HTTPRequest } from 'puppeteer';
 import { Browser, Page } from 'puppeteer';
-import { getChunklistUrlSubstring, writeChunklistUrl, chunkArray, processBatch } from './lib/utils';
+import { AGM } from './types';
+import { getChunklistUrlSubstring, chunkArray, processBatch } from './lib/utils';
 
-const chunklistSet: Set<string> = new Set();
+const chunklistSet: Set<AGM> = new Set();
 
-async function downloadPlaylistAudio(url: string): Promise<void> {
+async function downloadPlaylistAudio(agm: AGM): Promise<void> {
     return new Promise((resolve, reject) => {
-        const sanitizedUrl = url.replace(/[^a-zA-Z0-9]/g, "_");
-        console.log('url unsanitized', url)
-        console.log('url sanitized', sanitizedUrl)
         fs.mkdir("audio", { recursive: true }, (error) => {
             if (error) {
                 console.log(`error in creating dir: ${error}`);
@@ -19,19 +17,18 @@ async function downloadPlaylistAudio(url: string): Promise<void> {
                 console.log("path created or already exists");
             }
         });
-        const outputPath = `audio/${sanitizedUrl}.%(ext)s`;
-        const process = spawn("yt-dlp", ["-x", "-o", outputPath, url]);
+        const outputPath = `audio/${agm.name}_${agm.year}.%(ext)s`;
 
+        const process = spawn("yt-dlp", ["-x", "-o", outputPath, agm.url]);
         process.stdout.on("data", (data) => {
-            console.log(`[${sanitizedUrl}] stdout: ${data}`);
+            console.log(`[${agm.name} ${agm.year}]`);
         });
         process.stderr.on("data", (data) => {
-            console.log(`[${sanitizedUrl}] stderr: ${data}`);
+            console.log(`[${agm.name} ${agm.year}] stderr: ${data}`);
         });
-
         process.on("close", (code) => {
             if (code === 0) {
-                resolve()
+                resolve();
             } else {
                 reject(new Error(`error: yt-dlp exited with code ${code}`));
             }
@@ -39,11 +36,11 @@ async function downloadPlaylistAudio(url: string): Promise<void> {
     })
 };
 
-async function getM3U8Playlist(url: string): Promise<void> {
+async function getM3U8Playlist(agm: AGM): Promise<void> {
     const urlPatterns: {[key: string]: string} = {
         "https://webcast.openbriefing.com": "chunklist.m3u8"
     };
-    const targetString: string | undefined = Object.keys(urlPatterns).find((key) => url.includes(key));
+    const targetString: string | undefined = Object.keys(urlPatterns).find((key) => agm.url.includes(key));
     const m3u8Playlist: string = targetString ? urlPatterns[targetString] : ".m3u8";
 
     const browser: Browser = await puppeteer.launch({ headless: false });
@@ -54,10 +51,10 @@ async function getM3U8Playlist(url: string): Promise<void> {
         page.on("request", async (interceptedRequest: HTTPRequest) => {
             if (interceptedRequest.url().includes(m3u8Playlist)) {
                 const interceptedUrl = interceptedRequest.url();
-                const chunklist: string = m3u8Playlist === "chunklist.m3u8" ? getChunklistUrlSubstring(interceptedUrl) : interceptedUrl;
-                if (!chunklistSet.has(chunklist)) {
-                    chunklistSet.add(chunklist);
-                    writeChunklistUrl(chunklist);
+                const chunklistUrl: string = m3u8Playlist === "chunklist.m3u8" ? getChunklistUrlSubstring(interceptedUrl) : interceptedUrl;
+                const chunklistAGM = { name: agm.name, year: agm.year, url: chunklistUrl };
+                if (!Array.from(chunklistSet).some((agm) => agm.url === chunklistUrl)) {
+                    chunklistSet.add(chunklistAGM);
                 }
                 clearTimeout(timeoutHandle);
                 resolve();
@@ -67,13 +64,13 @@ async function getM3U8Playlist(url: string): Promise<void> {
         });
 
         timeoutHandle = setTimeout(() => {
-            console.log(`Timeout reached for ${url}`);
-            reject(new Error(`Timeout reached for ${url}`));
+            console.log(`Timeout reached for ${agm.url}`);
+            reject(new Error(`Timeout reached for ${agm.url}`));
         }, 15000);
     });
 
     await page.setRequestInterception(true);
-    await page.goto(url, { waitUntil: "load", timeout: 30000 });
+    await page.goto(agm.url, { waitUntil: "load", timeout: 30000 });
 
     // try-catch-finally blocks are ugly
     try {
@@ -88,26 +85,29 @@ async function getM3U8Playlist(url: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-    const fileStream: fs.ReadStream = fs.createReadStream("urls.txt");
+    const fileStream: fs.ReadStream = fs.createReadStream("urls.csv");
     const rl: readline.Interface = readline.createInterface({
         input: fileStream,
         crlfDelay: Infinity,
     });
 
-    const urls: string[] = [];
-    for await (const url of rl) {
-        urls.push(url.trim());
+    const agms: AGM[] = [];
+    for await (const line of rl) {
+        const [name, year, url] = line.split(",");
+        if (name !== "name") {
+            agms.push({ name, year, url: url.trim() });
+        }
     }
 
-    const urlBatches: string[][] = chunkArray(urls, 2);
-    for (const batch of urlBatches) {
-        await processBatch(batch, getM3U8Playlist);
+    const agmBatches = chunkArray(agms, 2);
+    for (const agmBatch of agmBatches) {
+        await processBatch(agmBatch, getM3U8Playlist);
     }
 
-    const chunklistUrls: string[] = Array.from(chunklistSet);
-    const batches: string[][] = chunkArray(chunklistUrls, 2);
-    for (const batch of batches) {
-        await processBatch(batch, downloadPlaylistAudio);
+    const chunklistAGMs: AGM[] = Array.from(chunklistSet);
+    const urlBatches = chunkArray(chunklistAGMs, 2);
+    for (const urlBatch of urlBatches) {
+        await processBatch(urlBatch, downloadPlaylistAudio);
     }
 }
 
