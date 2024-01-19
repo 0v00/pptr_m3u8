@@ -12,8 +12,9 @@ Place the annual general meetings you want to download and transcribe in `urls.c
 2. `npm start` to run the scraping/audio download process
 3. alternatively, run `./process_playlist_audio.sh` to scrape, download the audio, and transcribe with whisper.cpp.
 
-Playlist scraping and audio downloads can both be configured to run in batches of `N` size - currently we run batches of `2` for both, but this can be changed by updating the second param in `chunkArray`:
+Playlist scraping and audio downloads can both be configured to run in batches of `N` size - currently we run batches of `2` for both, but this can be changed by updating the second param in `chunkArray` (see implementation in `lib/utils.ts`):
 ```ts
+    // playlist.ts
     const agmBatches: AGM[][] = chunkArray(agms, 2);
     for (const agmBatch of agmBatches) {
         await processBatch(agmBatch, getM3U8Playlist);
